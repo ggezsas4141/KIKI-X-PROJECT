@@ -1,0 +1,279 @@
+@echo off
+net session >nul 2>&1
+if not "%errorlevel%"=="0" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    exit /b
+)
+
+setlocal EnableExtensions EnableDelayedExpansion
+title PRIME X // FIVEM PERFORMANCE CONSOLE
+mode con: cols=92 lines=30
+color 0B
+
+:: =========================================================
+:: PRIME X - Neon / futuristic CMD UI
+:: ASCII only to prevent garbled Thai characters.
+:: Menu uses CHOICE, so no Enter key is required.
+:: =========================================================
+
+:BOOT
+cls
+echo.
+echo   =======================================================================
+echo                         P R I M E   X
+echo                    F I V E M   C O N S O L E
+echo   =======================================================================
+echo.
+echo             [ SYSTEM INITIALIZING... ]
+echo.
+call :BAR
+timeout /t 1 /nobreak >nul
+goto MENU
+
+:BAR
+set "bar="
+for /l %%A in (1,1,32) do (
+    set "bar=!bar!#"
+    <nul set /p "=  [!bar!]"
+    timeout /t 0 >nul
+)
+echo.
+exit /b
+
+:MENU
+cls
+echo.
+echo   +---------------------------------------------------------------------+
+echo   ^|                     PRIME X // PERFORMANCE HUB                      ^|
+echo   +---------------------------------------------------------------------+
+echo   ^|                                                                     ^|
+echo   ^|   [1]  TEMP CLEANER          [5]  GAME MODE                         ^|
+echo   ^|   [2]  FIVEM CACHE            [6]  NETWORK RESET                     ^|
+echo   ^|   [3]  BACKGROUND APPS        [7]  MEMORY CLEAN                       ^|
+echo   ^|   [4]  OPTIONAL SERVICES      [8]  FULL BOOST                         ^|
+echo   ^|                                                                     ^|
+echo   ^|                       [0]  EXIT                                     ^|
+echo   ^|                                                                     ^|
+echo   +---------------------------------------------------------------------+
+echo.
+echo     STATUS : READY
+echo     MODE   : ADMINISTRATOR
+echo.
+echo     Select an option [1-8,0] - press the number only.
+echo.
+
+choice /c 123456780 /n /m "     PRIME X ^> "
+
+if errorlevel 9 goto EXIT
+if errorlevel 8 goto FULLBOOST
+if errorlevel 7 goto MEMORY
+if errorlevel 6 goto NETWORK
+if errorlevel 5 goto GAMEMODE
+if errorlevel 4 goto SERVICES
+if errorlevel 3 goto BACKGROUND
+if errorlevel 2 goto CACHE
+if errorlevel 1 goto TEMP
+
+:TEMP
+cls
+call :HEADER "TEMP CLEANER"
+echo.
+echo     [*] Scanning temporary directories...
+timeout /t 1 /nobreak >nul
+echo     [*] Cleaning user TEMP...
+del /f /s /q "%TEMP%\*" >nul 2>&1
+for /d %%D in ("%TEMP%\*") do rd /s /q "%%D" >nul 2>&1
+echo     [*] Cleaning Windows TEMP...
+del /f /s /q "C:\Windows\Temp\*" >nul 2>&1
+for /d %%D in ("C:\Windows\Temp\*") do rd /s /q "%%D" >nul 2>&1
+echo.
+echo     [OK] TEMP CLEANUP COMPLETE
+call :WAITBACK
+goto MENU
+
+:CACHE
+cls
+call :HEADER "FIVEM CACHE"
+echo.
+echo     [*] Closing FiveM...
+taskkill /f /im FiveM.exe >nul 2>&1
+taskkill /f /im FiveM_GTAProcess.exe >nul 2>&1
+echo     [*] Cleaning FiveM cache...
+for %%D in (
+"%LOCALAPPDATA%\FiveM\FiveM.app\data\cache"
+"%LOCALAPPDATA%\FiveM\FiveM.app\data\server-cache"
+"%LOCALAPPDATA%\FiveM\FiveM.app\data\server-cache-priv"
+) do if exist "%%~D" rd /s /q "%%~D" >nul 2>&1
+echo     [*] Cleaning DirectX shader cache...
+if exist "%LOCALAPPDATA%\D3DSCache" del /f /s /q "%LOCALAPPDATA%\D3DSCache\*" >nul 2>&1
+echo.
+echo     [OK] FIVEM CACHE CLEANUP COMPLETE
+call :WAITBACK
+goto MENU
+
+:BACKGROUND
+cls
+call :HEADER "BACKGROUND APPS"
+echo.
+echo     [*] Closing selected non-essential apps...
+for %%P in (
+    OneDrive.exe
+    Teams.exe
+    ms-teams.exe
+    Skype.exe
+    YourPhone.exe
+    PhoneExperienceHost.exe
+    Widgets.exe
+    GameBar.exe
+    GameBarFTServer.exe
+) do taskkill /f /im %%P >nul 2>&1
+echo.
+echo     [OK] BACKGROUND CLEANUP COMPLETE
+call :WAITBACK
+goto MENU
+
+:SERVICES
+cls
+call :HEADER "OPTIONAL SERVICES"
+echo.
+echo     [*] Stopping selected optional services...
+sc stop SysMain >nul 2>&1
+sc stop XblAuthManager >nul 2>&1
+sc stop XblGameSave >nul 2>&1
+sc stop XboxNetApiSvc >nul 2>&1
+echo.
+echo     [OK] OPTIONAL SERVICES HANDLED
+echo     [!] Windows Update and Windows Defender were not touched.
+call :WAITBACK
+goto MENU
+
+:GAMEMODE
+cls
+call :HEADER "GAME MODE"
+echo.
+echo     [*] Enabling Windows Game Mode...
+reg add "HKCU\Software\Microsoft\GameBar" /v AutoGameModeEnabled /t REG_DWORD /d 1 /f >nul
+reg add "HKCU\Software\Microsoft\GameBar" /v AllowAutoGameMode /t REG_DWORD /d 1 /f >nul
+echo.
+echo     [OK] GAME MODE ENABLED
+call :WAITBACK
+goto MENU
+
+:NETWORK
+cls
+call :HEADER "NETWORK RESET"
+echo.
+echo     [*] Flushing DNS...
+ipconfig /flushdns
+echo.
+echo     [*] Resetting Winsock...
+netsh winsock reset
+echo.
+echo     [*] Resetting TCP/IP...
+netsh int ip reset
+echo.
+echo     [OK] NETWORK COMMANDS COMPLETE
+echo     [!] Restart Windows for all reset changes to apply.
+call :WAITBACK
+goto MENU
+
+:MEMORY
+cls
+call :HEADER "MEMORY CLEAN"
+echo.
+echo     [*] Closing selected background processes...
+for %%P in (
+    OneDrive.exe
+    Teams.exe
+    ms-teams.exe
+    Skype.exe
+    YourPhone.exe
+    PhoneExperienceHost.exe
+    Widgets.exe
+    GameBar.exe
+) do taskkill /f /im %%P >nul 2>&1
+echo.
+echo     [OK] BACKGROUND MEMORY CLEANUP COMPLETE
+call :WAITBACK
+goto MENU
+
+:FULLBOOST
+cls
+call :HEADER "FULL BOOST"
+echo.
+echo     [01/05] TEMP CLEANUP...
+del /f /s /q "%TEMP%\*" >nul 2>&1
+for /d %%D in ("%TEMP%\*") do rd /s /q "%%D" >nul 2>&1
+del /f /s /q "C:\Windows\Temp\*" >nul 2>&1
+for /d %%D in ("C:\Windows\Temp\*") do rd /s /q "%%D" >nul 2>&1
+echo              DONE
+
+echo     [02/05] FIVEM CACHE...
+taskkill /f /im FiveM.exe >nul 2>&1
+taskkill /f /im FiveM_GTAProcess.exe >nul 2>&1
+for %%D in (
+"%LOCALAPPDATA%\FiveM\FiveM.app\data\cache"
+"%LOCALAPPDATA%\FiveM\FiveM.app\data\server-cache"
+"%LOCALAPPDATA%\FiveM\FiveM.app\data\server-cache-priv"
+) do if exist "%%~D" rd /s /q "%%~D" >nul 2>&1
+if exist "%LOCALAPPDATA%\D3DSCache" del /f /s /q "%LOCALAPPDATA%\D3DSCache\*" >nul 2>&1
+echo              DONE
+
+echo     [03/05] BACKGROUND APPS...
+for %%P in (
+    OneDrive.exe
+    Teams.exe
+    ms-teams.exe
+    Skype.exe
+    YourPhone.exe
+    PhoneExperienceHost.exe
+    Widgets.exe
+    GameBar.exe
+    GameBarFTServer.exe
+) do taskkill /f /im %%P >nul 2>&1
+echo              DONE
+
+echo     [04/05] GAME MODE...
+reg add "HKCU\Software\Microsoft\GameBar" /v AutoGameModeEnabled /t REG_DWORD /d 1 /f >nul
+reg add "HKCU\Software\Microsoft\GameBar" /v AllowAutoGameMode /t REG_DWORD /d 1 /f >nul
+echo              DONE
+
+echo     [05/05] DNS FLUSH...
+ipconfig /flushdns >nul 2>&1
+echo              DONE
+
+echo.
+echo   +---------------------------------------------------------------------+
+echo   ^|                         BOOST COMPLETE                              ^|
+echo   +---------------------------------------------------------------------+
+echo.
+echo     Safe scope: temp/cache/background cleanup + Game Mode + DNS flush.
+echo     No DLL injection, no game-file modification, no anti-cheat changes.
+echo.
+call :WAITBACK
+goto MENU
+
+:HEADER
+echo.
+echo   +---------------------------------------------------------------------+
+echo   ^|   PRIME X  //  %~1
+echo   +---------------------------------------------------------------------+
+exit /b
+
+:WAITBACK
+echo.
+echo     Press any key to return to the PRIME X menu...
+pause >nul
+exit /b
+
+:EXIT
+cls
+echo.
+echo   =======================================================================
+echo                         PRIME X // SESSION CLOSED
+echo   =======================================================================
+echo.
+echo     Thanks for using PRIME X.
+echo.
+timeout /t 2 /nobreak >nul
+exit /b 
