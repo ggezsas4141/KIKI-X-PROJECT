@@ -301,7 +301,39 @@ class Dashboard:
         if messagebox.askyesno("Low Ping Reset","คำสั่งนี้จะแค่ตรวจ ping และแสดงคำแนะนำ ไม่ reset Winsock/TCP อัตโนมัติ\nต้องการทดสอบ ping 1.1.1.1 หรือไม่?"):
             self.do_ping()
 
+OWNER_LICENSE_KEY = "KIKI-CGKN-JGWD-AKVV-KS8S"
+
+def owner_login():
+    login = tk.Tk()
+    login.title(APP + " — Owner Login")
+    login.geometry("470x360")
+    login.resizable(False, False)
+    login.configure(bg=BG)
+    accepted = {"ok": False}
+    tk.Label(login, text="KX", font=("Segoe UI", 38, "bold"), fg="#ffffff", bg="#5425c7", width=4).pack(pady=(28,12))
+    tk.Label(login, text="KIKI X PROJECT V4", font=("Segoe UI", 18, "bold"), fg=TEXT, bg=BG).pack()
+    tk.Label(login, text="OWNER LICENSE KEY", font=("Segoe UI", 9, "bold"), fg=GREEN, bg=BG).pack(pady=(5,20))
+    entry=tk.Entry(login, show="•", font=("Consolas", 13), width=34, bg=PANEL, fg=TEXT, insertbackground=TEXT, relief="flat")
+    entry.pack(ipady=10, padx=25)
+    msg=tk.Label(login, text="กรอกคีย์เจ้าของเพื่อเปิดโปรแกรม", font=("Segoe UI", 9), fg=MUTED, bg=BG)
+    msg.pack(pady=12)
+    def check():
+        if secrets.compare_digest(entry.get().strip().upper(), OWNER_LICENSE_KEY):
+            accepted["ok"] = True
+            login.destroy()
+        else:
+            msg.config(text="คีย์ไม่ถูกต้อง กรุณาลองอีกครั้ง", fg=RED)
+            entry.delete(0, "end")
+    tk.Button(login, text="LOGIN", command=check, bg="#7d32e8", fg="white", activebackground="#9a54ff", relief="flat", bd=0, font=("Segoe UI", 11, "bold"), padx=30, pady=10).pack(pady=5)
+    entry.bind("<Return>", lambda _event: check())
+    login.protocol("WM_DELETE_WINDOW", login.destroy)
+    entry.focus_set()
+    login.mainloop()
+    return accepted["ok"]
+
 def main():
     if platform.system()!="Windows": print("Designed for Windows.")
+    if not owner_login():
+        return
     root=tk.Tk(); Dashboard(root); root.mainloop()
 if __name__=="__main__":main()

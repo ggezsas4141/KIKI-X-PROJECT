@@ -1,26 +1,26 @@
-KIKI X PROJECT V4 — สร้างไฟล์ EXE เดียวผ่าน GitHub Actions
+KIKI X PROJECT V4 — Owner License Build
 
-สิ่งที่จะได้:
-  KIKI_X_PROJECT_V4.exe (ไฟล์เดียวสำหรับเปิดใช้งานบน Windows)
+OWNER KEY (keep private):
+KIKI-CGKN-JGWD-AKVV-KS8S
 
-ข้อจำกัดสำคัญ:
-  แพ็กนี้เป็นซอร์สพร้อม workflow สำหรับให้ GitHub สร้าง EXE บน Windows
-  ไม่ใช่ไฟล์ EXE ที่คอมไพล์เสร็จแล้ว เนื่องจากสภาพแวดล้อมที่จัดทำแพ็กนี้ไม่ใช่ Windows
+WHAT THIS PACKAGE DOES
+- Keeps the existing Windows Tkinter dashboard and functions from KIKI_X_PROJECT_V4.py.
+- Adds an Owner License Key login gate before opening the dashboard.
+- Existing functions include CPU/RAM/GPU monitoring where supported, ping test, performance micro-benchmark, FiveM/FPS/GPU/RAM/network guidance, TEMP cleanup, registry setting backup/restore. Some buttons provide guidance rather than automatic optimization, as in the original source.
 
-วิธีสร้าง EXE:
-1. เข้าสู่ GitHub และสร้าง repository ใหม่ (เลือก Private ได้)
-2. อัปโหลดไฟล์ทั้งหมดในโฟลเดอร์นี้ รวมทั้งโฟลเดอร์ .github/workflows/build-windows.yml
-   ให้ไฟล์ KIKI_X_PROJECT_V4.py และ requirements.txt อยู่ที่ root ของ repository
-3. ไปที่แท็บ Actions แล้วเลือก "Build Windows EXE"
-4. ถ้า workflow ยังไม่เริ่ม ให้กด "Run workflow"
-5. รอจนงานสำเร็จ แล้วเปิดงานล่าสุดและดาวน์โหลด Artifact ชื่อ
-   KIKI_X_PROJECT_V4-Windows-EXE
-6. แตก ZIP artifact ที่ดาวน์โหลด จะพบ KIKI_X_PROJECT_V4.exe
+BUILD EXE WITH YOUR EXISTING GITHUB REPOSITORY
+1. Download and extract this ZIP.
+2. In your GitHub repository KIKI-X-PROJECT, replace the existing KIKI_X_PROJECT_V4.py with this package's file (open file > pencil Edit or Add file > Upload files).
+3. Ensure requirements.txt is at the repository root.
+4. Put .github/workflows/build-windows.yml in that exact path.
+5. Commit changes, then open Actions and wait for green check.
+6. Open the successful run, find Artifacts, download KIKI_X_PROJECT_V4-Owner-EXE, and extract the ZIP.
+7. Run KIKI_X_PROJECT_V4.exe and enter the key above.
 
-Workflow จะทำงานอัตโนมัติเมื่อ push ไปยัง main หรือ master ด้วย
+IMPORTANT SECURITY LIMITATION
+This is a local owner-key gate, not server-side license authentication. The key is embedded in the program and a determined user can extract/bypass it. Do not distribute this build to others if the owner key must remain secret. Strong licensing requires a server endpoint and a hosted database.
 
-ความปลอดภัย:
-- ตรวจสอบโค้ดและสแกนไฟล์ EXE ก่อนเปิดใช้งาน
-- ไม่จำเป็นต้องเปิดโปรแกรมด้วยสิทธิ์ Administrator สำหรับการใช้งานทั่วไป
-- ปุ่ม Clean TEMP ลบไฟล์ TEMP เก่ากว่า 24 ชั่วโมงและไม่สามารถกู้คืนจากแอปได้
-- ฟังก์ชันปรับ Registry ควรใช้ด้วยความเข้าใจ และเก็บข้อมูลสำรองไว้
+SAFETY
+- TEMP cleanup deletes files older than 24 hours and cannot restore deleted files.
+- Registry change is limited to the VisualFXSetting value and the app saves the previous value for Restore.
+- Optimization advice does not guarantee higher FPS.
