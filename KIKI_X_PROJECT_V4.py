@@ -9,7 +9,24 @@ TEXT = "#edf4ff"; MUTED = "#8fa4c4"; GREEN = "#19e985"; RED = "#ff3548"; BLUE = 
 ROOT = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "KIKI_X_PROJECT_V4"
 BACKUP_DIR = ROOT / "backups"; BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 BACKUP_FILE = BACKUP_DIR / "latest_backup.json"; LOG_FILE = ROOT / "activity.log"
+FEATURE_FILE = ROOT / "features.json"
 ROOT.mkdir(parents=True, exist_ok=True)
+
+FEATURES = ["FPS Boost", "CPU Boost", "GPU Optimization", "RAM Optimization",
+            "FiveM Optimization", "Network Boost", "Clean & Smooth", "Restore",
+            "Quick Boost", "Real-time Monitor", "Performance Test", "Ping Tools"]
+
+def load_features():
+    defaults = {name: True for name in FEATURES}
+    try:
+        saved = json.loads(FEATURE_FILE.read_text(encoding="utf-8"))
+        defaults.update({k: bool(v) for k, v in saved.items() if k in defaults})
+    except Exception:
+        pass
+    return defaults
+
+def save_features(settings):
+    FEATURE_FILE.write_text(json.dumps(settings, ensure_ascii=False, indent=2), encoding="utf-8")
 
 def log(msg):
     line = time.strftime("[%Y-%m-%d %H:%M:%S] ") + msg
@@ -159,7 +176,8 @@ def real_benchmark():
 class Dashboard:
     def __init__(self, root):
         self.root=root; root.title(APP); root.geometry("1280x790"); root.minsize(1000,680); root.configure(bg=BG)
-        self.busy=False; self.current="Dashboard"; self.build(); self.log("พร้อมใช้งาน • Local-only tools • Safe profile")
+        self.busy=False; self.current="Dashboard"; self.features=load_features()
+        self.build(); self.log("พร้อมใช้งาน • Local-only tools • Safe profile")
     def label(self, parent, text, size=11, color=TEXT, bold=False, **kw):
         return tk.Label(parent,text=text,font=("Segoe UI",size,"bold" if bold else "normal"),fg=color,bg=kw.pop("bg",PANEL),**kw)
     def card(self,parent,title):
@@ -191,6 +209,7 @@ class Dashboard:
         right=tk.Frame(hero,bg=PANEL); right.pack(side="right",padx=18,pady=22)
         self.button(right,"⚡  QUICK BOOST",self.quick,True).pack(side="left",padx=5)
         self.button(right,"↻  REFRESH",self.refresh).pack(side="left",padx=5)
+        self.button(right,"⚙  FEATURES ON/OFF",self.feature_settings).pack(side="left",padx=5)
         cards=tk.Frame(body,bg=BG); cards.pack(fill="x",pady=12)
         self.score=self.card(cards,"Performance profile"); self.score.pack(side="left",fill="both",expand=True,padx=(0,8))
         self.label(self.score,"SAFE",25,GREEN,True).pack(anchor="w",padx=16,pady=(12,0))
@@ -213,7 +232,7 @@ class Dashboard:
         self.label(overview,"◆  Storage   Lexar NM620 512GB SSD",10,TEXT,True).pack(anchor="w",padx=16,pady=5)
         self.label(overview,"◆  PSU   Gigabyte 550W",10,TEXT,True).pack(anchor="w",padx=16,pady=5)
         self.button(overview,"REAL-TIME MONITOR",self.show_monitor,True).pack(anchor="w",padx=16,pady=(12,4))
-        self.button(overview,"RUN PERFORMANCE TEST",lambda:self.action("Performance Test",real_benchmark)).pack(anchor="w",padx=16,pady=4)
+        self.button(overview,"RUN PERFORMANCE TEST",lambda:self.action("Performance Test",real_benchmark) if self.feature_enabled("Performance Test") else None).pack(anchor="w",padx=16,pady=4)
         recent=self.card(lower,"Activity / Recent optimization"); recent.pack(side="left",fill="both",expand=True,padx=8)
         self.logbox=scrolledtext.ScrolledText(recent,bg="#040d1b",fg="#d9e7ff",insertbackground="white",font=("Consolas",9),relief="flat",wrap="word",height=12)
         self.logbox.pack(fill="both",expand=True,padx=12,pady=(0,12))
@@ -240,10 +259,55 @@ class Dashboard:
             try: result=fn(); self.root.after(0,lambda t=title,r=result:self.finish(t,r))
             except Exception as e: self.root.after(0,lambda t=title,err=str(e):self.finish(t,err,True))
         threading.Thread(target=worker,daemon=True).start()
+    def feature_settings(self):
+        win=tk.Toplevel(self.root)
+        win.title("KIKI X — Feature Switches")
+        win.geometry("540x650")
+        win.configure(bg=BG)
+        win.transient(self.root)
+        self.label(win,"FEATURE SWITCHES",17,GREEN,True,bg=BG).pack(anchor="w",padx=20,pady=(18,4))
+        self.label(win,"ปิดเมนูที่ไม่ต้องการใช้งานได้ • ค่าจะถูกจำไว้ในเครื่องนี้",10,MUTED,bg=BG).pack(anchor="w",padx=20,pady=(0,12))
+        vars_={}
+        canvas=tk.Canvas(win,bg=BG,highlightthickness=0)
+        inner=tk.Frame(canvas,bg=BG)
+        scrollbar=tk.Scrollbar(win,orient="vertical",command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right",fill="y")
+        canvas.pack(side="left",fill="both",expand=True,padx=(12,0),pady=4)
+        canvas.create_window((0,0),window=inner,anchor="nw")
+        inner.bind("<Configure>",lambda e:canvas.configure(scrollregion=canvas.bbox("all")))
+        for name in FEATURES:
+            row=tk.Frame(inner,bg=PANEL,highlightbackground=BORDER,highlightthickness=1)
+            row.pack(fill="x",padx=8,pady=4)
+            tk.Label(row,text=name,bg=PANEL,fg=TEXT,font=("Segoe UI",10,"bold")).pack(side="left",padx=12,pady=10)
+            var=tk.BooleanVar(value=self.features.get(name,True)); vars_[name]=var
+            tk.Checkbutton(row,text="ON / OFF",variable=var,bg=PANEL,fg=GREEN,selectcolor="#142b4d",
+                activebackground=PANEL,activeforeground=GREEN,font=("Segoe UI",9,"bold")).pack(side="right",padx=12)
+        def save():
+            self.features={name:var.get() for name,var in vars_.items()}
+            try:
+                save_features(self.features)
+                self.log("บันทึก Feature Switches แล้ว")
+                messagebox.showinfo(APP,"บันทึกการเปิด/ปิดฟังก์ชันแล้ว\nการปิดเมนูจะปิดการเรียกใช้จากแอป ไม่ได้ย้อนคืนค่าระบบที่เปลี่ยนไปก่อนหน้า",parent=win)
+                win.destroy()
+            except Exception as e:
+                messagebox.showerror(APP,"บันทึกไม่ได้: "+str(e),parent=win)
+        footer=tk.Frame(win,bg=BG); footer.pack(fill="x",side="bottom",padx=18,pady=12)
+        self.button(footer,"เปิดทั้งหมด",lambda:[v.set(True) for v in vars_.values()]).pack(side="left",padx=4)
+        self.button(footer,"ปิดทั้งหมด",lambda:[v.set(False) for v in vars_.values()]).pack(side="left",padx=4)
+        self.button(footer,"บันทึก",save,True).pack(side="right",padx=4)
+
+    def feature_enabled(self,name):
+        if self.features.get(name,True):
+            return True
+        messagebox.showwarning("ฟังก์ชันถูกปิด",f"{name} ถูกปิดอยู่\nเปิดใช้งานได้ที่ปุ่ม FEATURES ON/OFF")
+        return False
+
     def select(self,name):
+        if name == "Dashboard": return
+        if not self.feature_enabled(name): return
         funcs={"FPS Boost":fps_boost,"CPU Boost":cpu_boost,"GPU Optimization":gpu_opt,"RAM Optimization":ram_opt,
                "FiveM Optimization":fivem_opt,"Network Boost":network_opt,"Clean & Smooth":clean_temp,"Restore":restore}
-        if name=="Dashboard":return
         if name in funcs:
             if name == "CPU Boost":
                 if not messagebox.askyesno("Apply CPU/Windows setting",
@@ -251,12 +315,14 @@ class Dashboard:
                     return
             self.action(name,funcs[name],name=="Clean & Smooth" or name=="Restore")
     def quick(self):
+        if not self.feature_enabled("Quick Boost"): return
         self.action("Quick Boost",lambda: "\n\n".join([fps_boost(),gpu_opt(),ram_opt(),fivem_opt(),
             "CPU/Windows Visual Effects: ไม่ได้เปลี่ยนอัตโนมัติ เพื่อให้กดยืนยัน Apply แยกต่างหาก"]))
     def refresh(self):
         self.log("Refresh: ตรวจข้อมูลโปรไฟล์แล้ว (ไม่แก้ค่าระบบ)")
         messagebox.showinfo(APP,"รีเฟรชข้อมูลโปรไฟล์แล้ว\nค่าการใช้งาน CPU/GPU แบบสดยังไม่ได้เปิดใช้ในรุ่นนี้")
     def show_monitor(self):
+        if not self.feature_enabled("Real-time Monitor"): return
         win = tk.Toplevel(self.root)
         win.title("KIKI X — Real-time Monitor")
         win.geometry("620x430")
@@ -288,6 +354,7 @@ class Dashboard:
         loop()
 
     def do_ping(self):
+        if not self.feature_enabled("Ping Tools"): return
         def work():
             result=ping_test()
             self.root.after(0,lambda:self.ping_done(result))
@@ -301,39 +368,7 @@ class Dashboard:
         if messagebox.askyesno("Low Ping Reset","คำสั่งนี้จะแค่ตรวจ ping และแสดงคำแนะนำ ไม่ reset Winsock/TCP อัตโนมัติ\nต้องการทดสอบ ping 1.1.1.1 หรือไม่?"):
             self.do_ping()
 
-OWNER_LICENSE_KEY = "KIKI-CGKN-JGWD-AKVV-KS8S"
-
-def owner_login():
-    login = tk.Tk()
-    login.title(APP + " — Owner Login")
-    login.geometry("470x360")
-    login.resizable(False, False)
-    login.configure(bg=BG)
-    accepted = {"ok": False}
-    tk.Label(login, text="KX", font=("Segoe UI", 38, "bold"), fg="#ffffff", bg="#5425c7", width=4).pack(pady=(28,12))
-    tk.Label(login, text="KIKI X PROJECT V4", font=("Segoe UI", 18, "bold"), fg=TEXT, bg=BG).pack()
-    tk.Label(login, text="OWNER LICENSE KEY", font=("Segoe UI", 9, "bold"), fg=GREEN, bg=BG).pack(pady=(5,20))
-    entry=tk.Entry(login, show="•", font=("Consolas", 13), width=34, bg=PANEL, fg=TEXT, insertbackground=TEXT, relief="flat")
-    entry.pack(ipady=10, padx=25)
-    msg=tk.Label(login, text="กรอกคีย์เจ้าของเพื่อเปิดโปรแกรม", font=("Segoe UI", 9), fg=MUTED, bg=BG)
-    msg.pack(pady=12)
-    def check():
-        if secrets.compare_digest(entry.get().strip().upper(), OWNER_LICENSE_KEY):
-            accepted["ok"] = True
-            login.destroy()
-        else:
-            msg.config(text="คีย์ไม่ถูกต้อง กรุณาลองอีกครั้ง", fg=RED)
-            entry.delete(0, "end")
-    tk.Button(login, text="LOGIN", command=check, bg="#7d32e8", fg="white", activebackground="#9a54ff", relief="flat", bd=0, font=("Segoe UI", 11, "bold"), padx=30, pady=10).pack(pady=5)
-    entry.bind("<Return>", lambda _event: check())
-    login.protocol("WM_DELETE_WINDOW", login.destroy)
-    entry.focus_set()
-    login.mainloop()
-    return accepted["ok"]
-
 def main():
     if platform.system()!="Windows": print("Designed for Windows.")
-    if not owner_login():
-        return
     root=tk.Tk(); Dashboard(root); root.mainloop()
 if __name__=="__main__":main()
